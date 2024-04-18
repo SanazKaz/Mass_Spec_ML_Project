@@ -21,7 +21,7 @@ if __name__ == '__main__':
     )
 
     n_proteins = 6
-    num_spectra = 1000
+    num_spectra = 1000000
     print(f'Generating {num_spectra} spectra for {n_proteins} proteins')
 
     # Generate spectra and interaction matrices
