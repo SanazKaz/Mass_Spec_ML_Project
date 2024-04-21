@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from multiprocessing import Pool
-import cProfile
 
 
 class NativeMassSpecSimulator:
@@ -102,12 +101,8 @@ class NativeMassSpecSimulator:
     def generate_single_spectrum(self, n_proteins):
         interaction_matrix = self.create_interaction_matrix(n_proteins)
         mz_range, normalized_spectrum = self.simulate_mass_spectrum(interaction_matrix)
-        binned_spectrum = np.zeros(200)
-        for mz, intensity in zip(mz_range, normalized_spectrum):
-            bin_idx = int(mz // 100)
-            if bin_idx < 200:
-                binned_spectrum[bin_idx] += intensity
-        return binned_spectrum
+        
+        return mz_range, normalized_spectrum
     
     def worker(simulator, n_proteins):
         return simulator.generate_single_spectrum(n_proteins)
