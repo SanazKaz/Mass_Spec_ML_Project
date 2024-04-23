@@ -1,15 +1,14 @@
 from Mass_Spec_Simulator import NativeMassSpecSimulator
 import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-from multiprocessing import Pool
-import cProfile
+import torch 
+import pickle
+import psutil
 import time
 
 if __name__ == '__main__':
     print(f'Running simulator at {time.time()}')
     simulator = NativeMassSpecSimulator(
-        monomer_masses=[25644, 30885],  # Example: TNFa and TNFR1
+        monomer_masses=[25644, 90885],  # Masses of the monomers
         resolution=1000,
         chargewidth=10,
         maxcharge=50,
@@ -21,17 +20,25 @@ if __name__ == '__main__':
     )
 
     n_proteins = 6
-    num_spectra = 1000000
+    num_spectra = 10000
     print(f'Generating {num_spectra} spectra for {n_proteins} proteins')
+    
+    
+    spectra_dataset = torch.zeros((num_spectra, 20000))
+    interaction_matrices_dataset = torch.zeros((num_spectra, n_proteins, n_proteins))
+    
+# this could go in a fx in the class to reduce verbosity of the code. Can also just save as PT tensors instead of pkl
+# saving this way on my own laptop for 10k took 1.4MB for interaction matrices and 800MB for spectra - pretty good.
 
-    # Generate spectra and interaction matrices
-    spectra_data = simulator.generate_spectra_parallel(n_proteins, num_spectra)
-    interaction_matrices = np.array([simulator.create_interaction_matrix(n_proteins) for _ in range(num_spectra)])
+    for i in range(num_spectra):
+        mz_range, normalized_spectrum = simulator.generate_single_spectrum(n_proteins)
+        spectra_dataset[i] = torch.tensor(normalized_spectrum)
+        interaction_matrix = simulator.create_interaction_matrix(n_proteins)
+        interaction_matrices_dataset[i] = torch.tensor(interaction_matrix)
 
-    # Assuming spectra_data is an array of tuples (binned_spectrum) for each spectrum
-    # Let's stack all spectra into a single array for efficient storage
-    all_spectra = np.array([spectrum for spectrum in spectra_data])  # Each spectrum is assumed to be an array of length 2000
+with open('spectra_dataset.pkl', 'wb') as f, open('interaction_matrices.pkl', 'wb') as g:
+    pickle.dump(spectra_dataset, f)
+    pickle.dump(interaction_matrices_dataset, g)
+        
 
-    # Save the data as an NPZ file
-    np.savez('spectra.npz', spectra=all_spectra, interaction_matrices=interaction_matrices)
-    print(f'Finished simulator at {time.time()}')
+print(f'Finished simulator at {time.time()}')

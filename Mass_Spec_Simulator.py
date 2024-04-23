@@ -104,14 +104,3 @@ class NativeMassSpecSimulator:
         
         return mz_range, normalized_spectrum
     
-    def worker(simulator, n_proteins):
-        return simulator.generate_single_spectrum(n_proteins)
-    
-    def generate_spectra_parallel(self, n_proteins, num_spectra):
-        with Pool() as pool:
-            args = [(self, n_proteins) for _ in range(num_spectra)]
-            spectra_data = pool.starmap(NativeMassSpecSimulator.worker, args)
-            pool.close()
-            pool.join()
-
-        return spectra_data
