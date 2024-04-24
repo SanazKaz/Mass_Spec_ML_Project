@@ -1,3 +1,11 @@
+# mac byproduct file to ignore
 .DS_Store
 /__pycache__/
-/*.npz 
+
+#output of data generator
+/*.npz
+/*.pkl
+/*.h5
+/*.csv
+/*.txt
+/*.pt
