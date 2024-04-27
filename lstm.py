@@ -6,7 +6,8 @@ import torch.nn as nn
 import time
 import torch.optim as optim
 
-
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(device)
 
 def load_data(path):
     with open(path, 'rb') as f:
@@ -22,8 +23,8 @@ print(spectral_data.shape)
 
 
 # reshaping for LSTM - added one dimension at the end
-spectral_data_tensor = torch.tensor(spectral_data.unsqueeze(-1), dtype=torch.float32)
-matrices_tensor = torch.tensor(Interaction_matrices.view(-1, 36), dtype=torch.float32)
+spectral_data_tensor = torch.tensor(spectral_data.unsqueeze(-1), dtype=torch.float32).to(device)
+matrices_tensor = torch.tensor(Interaction_matrices.view(-1, 36), dtype=torch.float32).to(device)
 
 new_tensor = spectral_data_tensor[:4000]
 new_matrices = matrices_tensor[:4000]
@@ -68,18 +69,18 @@ test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=True)
 class LSTM(nn.Module):
     def __init__(self):
         super(LSTM, self).__init__()
-        self.lstm1 = nn.LSTM(input_size=1, hidden_size=64, num_layers=4, batch_first=True, dropout=0.5)
-        self.lstm2 = nn.LSTM(input_size=64, hidden_size=128, num_layers=4, batch_first=True, dropout=0.5)
-        self.lstm3 = nn.LSTM(input_size=128, hidden_size=256, num_layers=4, batch_first=True, dropout=0.5)
-        self.lstm4 = nn.LSTM(input_size=256, hidden_size=512, num_layers=4, batch_first=True, dropout=0.0)
-        self.regressor = nn.Linear(512, 36)
+        self.lstm1 = nn.LSTM(input_size=1, hidden_size=64, num_layers=2, batch_first=True, dropout=0.5)
+        self.lstm2 = nn.LSTM(input_size=64, hidden_size=128, num_layers=2, batch_first=True, dropout=0.5)
+        self.lstm3 = nn.LSTM(input_size=128, hidden_size=64, num_layers=2, batch_first=True, dropout=0.5)
+        # self.lstm4 = nn.LSTM(input_size=256, hidden_size=512, num_layers=4, batch_first=True, dropout=0.0)
+        self.regressor = nn.Linear(64, 36)
 
     def forward(self, x):
         # forward passing
         lstm_out, _ = self.lstm1(x)
         lstm_out, _ = self.lstm2(lstm_out)
         lstm_out, _ = self.lstm3(lstm_out)
-        lstm_out, _ = self.lstm4(lstm_out)
+        #lstm_out, _ = self.lstm4(lstm_out)
 
         # only last time step
         lstm_out = lstm_out[:, -1, :]
@@ -89,7 +90,7 @@ class LSTM(nn.Module):
         return output
 
 
-model = LSTM()
+model = LSTM().to(device)
 
 criteria = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001, )
@@ -105,6 +106,7 @@ def train_model(model, data_loader, criterion, optimizer, epochs):
         
         epoch_loss = 0
         for spectra, labels in data_loader:
+            spectra, labels = spectra.to(device), labels.to(device)
             optimizer.zero_grad()
             output = model(spectra)
             loss = criterion(output, labels)
