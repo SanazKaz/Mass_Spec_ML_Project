@@ -5,6 +5,8 @@ from sklearn.model_selection import train_test_split
 import torch.nn as nn   
 import time
 import torch.optim as optim
+import torch
+from torch.utils.data import TensorDataset, DataLoader
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(device)
@@ -51,8 +53,7 @@ print(matrix_train.shape)
 print(matrix_test.shape)
 print(matrix_val.shape)
 
-import torch
-from torch.utils.data import TensorDataset, DataLoader
+
 
 batch_size = 64
 # pytorch dataset and loaders
@@ -96,7 +97,6 @@ criteria = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001, )
 
 
-import time
 
 def train_model(model, data_loader, criterion, optimizer, epochs):
     model.train()
@@ -110,6 +110,7 @@ def train_model(model, data_loader, criterion, optimizer, epochs):
             optimizer.zero_grad()
             output = model(spectra)
             loss = criterion(output, labels)
+            print(out)
             loss.backward()
             optimizer.step()
             epoch_loss += loss.item()
