@@ -24,19 +24,19 @@ if __name__ == '__main__':
     print(f'Generating {num_spectra} spectra for {n_proteins} proteins')
     
     
-    spectra_dataset = torch.zeros((num_spectra, 20000))
+    spectra_dataset = torch.zeros((num_spectra, 2000))
     interaction_matrices_dataset = torch.zeros((num_spectra, n_proteins, n_proteins))
     
 # this could go in a fx in the class to reduce verbosity of the code. Can also just save as PT tensors instead of pkl
 # saving this way on my own laptop for 10k took 1.4MB for interaction matrices and 800MB for spectra - pretty good.
 
     for i in range(num_spectra):
-        mz_range, normalized_spectrum = simulator.generate_single_spectrum(n_proteins)
-        spectra_dataset[i] = torch.tensor(normalized_spectrum)
+        binned_mz_range, binned_normalized_spectrum = simulator.generate_single_spectrum(n_proteins)
+        spectra_dataset[i] = torch.tensor(binned_normalized_spectrum)
         interaction_matrix = simulator.create_interaction_matrix(n_proteins)
         interaction_matrices_dataset[i] = torch.tensor(interaction_matrix)
 
-with open('spectra_dataset.pkl', 'wb') as f, open('interaction_matrices.pkl', 'wb') as g:
+with open('spectra_dataset_10binned.pkl', 'wb') as f, open('interaction_matrices_10binned.pkl', 'wb') as g:
     pickle.dump(spectra_dataset, f)
     pickle.dump(interaction_matrices_dataset, g)
         

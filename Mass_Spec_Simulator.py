@@ -101,5 +101,15 @@ class NativeMassSpecSimulator:
         interaction_matrix = self.create_interaction_matrix(n_proteins)
         mz_range, normalized_spectrum = self.simulate_mass_spectrum(interaction_matrix)
         
-        return mz_range, normalized_spectrum
+        binned_normalised_spectrum = np.zeros(2000)
+
+        for mz, intensity in zip(mz_range, normalized_spectrum):
+            bin_idx = int(mz // 10)
+            if bin_idx < 2000:
+                binned_normalised_spectrum[bin_idx] += intensity
+
+            binned_mz_range = np.arange(0, 20000, 10)
+
+        return binned_mz_range, binned_normalised_spectrum
+        
     
