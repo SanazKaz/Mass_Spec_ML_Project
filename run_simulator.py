@@ -20,7 +20,7 @@ if __name__ == '__main__':
     )
 
     n_proteins = 6
-    num_spectra = 10000
+    num_spectra = 100000
     print(f'Generating {num_spectra} spectra for {n_proteins} proteins')
     
     
@@ -29,6 +29,9 @@ if __name__ == '__main__':
     
 # this could go in a fx in the class to reduce verbosity of the code. Can also just save as PT tensors instead of pkl
 # saving this way on my own laptop for 10k took 1.4MB for interaction matrices and 800MB for spectra - pretty good.
+# took 2 hours to generate 100k spectra - not bad 
+# 17 mins per 10k spectra but around 40 mins less in practise 
+
 
     for i in range(num_spectra):
         binned_mz_range, binned_normalized_spectrum = simulator.generate_single_spectrum(n_proteins)

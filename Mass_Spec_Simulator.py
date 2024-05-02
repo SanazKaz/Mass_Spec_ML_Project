@@ -82,13 +82,20 @@ class NativeMassSpecSimulator:
         return mz_range, normalized_spectrum #, peak_labels
 
 
-    def create_interaction_matrix(self, n_proteins):
-        interaction_matrix = np.random.randint(0, 2, (n_proteins, n_proteins))
-        interaction_matrix = np.where(interaction_matrix > 0, np.random.randint(1, 7, interaction_matrix.shape), interaction_matrix)
-        
+
+    def create_interaction_matrix(self, n_proteins): # Protein A is column B is the row
+        interaction_matrix = np.random.uniform(0, 1, (n_proteins, n_proteins))
+        #interaction_matrix = np.where(interaction_matrix > 0, np.random.randint(1, 7, interaction_matrix.shape), interaction_matrix)
+        nonzeros = np.random.randint(3, 12) # this determines how many non zero stoichs you'll have 
+        if nonzeros > n_proteins * n_proteins: # if the number of non zeros is greater than the number of elements in the matrix then set it between the range of rows and cols
+            nonzeros = np.random.randint(n_proteins, n_proteins + 1)
+        idx = np.random.choice(np.arange(n_proteins * n_proteins), size=(n_proteins * n_proteins - nonzeros), replace=False)
+        interaction_matrix.ravel()[idx] = 0
         interaction_matrix[0, 0] = 0
 
         return interaction_matrix
+
+
     
     # def update_interaction_matrix(self, interaction_matrix):
     #     # Randomly update non-zero values in the interaction matrix
