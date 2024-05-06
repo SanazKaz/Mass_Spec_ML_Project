@@ -8,6 +8,16 @@ import torch.optim as optim
 import torch
 from torch.utils.data import TensorDataset, DataLoader
 
+import numpy as np
+import pickle as pkl
+import torch
+from sklearn.model_selection import train_test_split
+import torch.nn as nn   
+import time
+import torch.optim as optim
+import torch
+from torch.utils.data import TensorDataset, DataLoader
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(device)
 
@@ -17,54 +27,100 @@ def load_data(path):
     return data
 
 # Load the data
-Interaction_matrices = load_data('interaction_matrices.pkl')
-spectral_data = load_data('spectra_dataset.pkl')
+Interaction_matrices = load_data('interaction_matrices_10binned.pkl')
+spectral_data = load_data('spectra_dataset_10binned.pkl')
 
 print(Interaction_matrices.shape)
 print(spectral_data.shape)
 
+import numpy as np
+import torch
 
-# reshaping for LSTM - added one dimension at the end
-spectral_data_tensor = torch.tensor(spectral_data.unsqueeze(-1), dtype=torch.float32).to(device)
-matrices_tensor = torch.tensor(Interaction_matrices.view(-1, 36), dtype=torch.float32).to(device)
+# Flatten each matrix separately then store in an array
+flattened_matrices = [matrix.flatten() for matrix in Interaction_matrices]
 
-new_tensor = spectral_data_tensor[:4000]
-new_matrices = matrices_tensor[:4000]
-print(new_tensor.shape)
-print(new_matrices.shape)
+# Stack the flattened matrices on top to give shape N x 36
+flattened_matrix = torch.stack(flattened_matrices)
+print(flattened_matrix.shape)
 
-print(matrices_tensor.shape)
-print(spectral_data_tensor.shape)
+print(flattened_matrix[0:10]) ## fine. 
 
-print(spectral_data.dtype)
-print(Interaction_matrices.dtype)
+import torch 
+import numpy
 
-# Splitting the data
-spec_train, spec_test, matrix_train, matrix_test = train_test_split(new_tensor, new_matrices, test_size=0.2, random_state=42)
-spec_test, spec_val, matrix_test, matrix_val = train_test_split(spec_test, matrix_test, test_size=0.5, random_state=42)
+threshold = 0.5
 
-
-# reshaped for LSTM
-print(spec_train.shape)
-print(spec_test.shape)
-print(spec_val.shape)
-
-print(matrix_train.shape)
-print(matrix_test.shape)
-print(matrix_val.shape)
+binary_flat_matrices = (flattened_matrix >= threshold).float()
 
 
+# making them flat instead of including 
+# abundance as that is not important for now and requires more
 
-batch_size = 64
-# pytorch dataset and loaders
-train_dataset = TensorDataset(torch.Tensor(spec_train), torch.Tensor(matrix_train))
-val_dataset = TensorDataset(torch.Tensor(spec_val), torch.Tensor(matrix_val))
-test_dataset = TensorDataset(torch.Tensor(spec_test), torch.Tensor(matrix_test))
+for matrix in binary_flat_matrices:
+  for i in range (len(matrix)):
+    value = matrix[i]
 
+print(flattened_matrix[1])
+print(binary_flat_matrices[1])
+
+import pandas as pd
+import torch
+import numpy as np
+
+
+# need to turn tensors to pandas df then append my flattened matrices to the end.
+matrix_columns = [f'PA{i // 6}PB{i % 6}' for i in range(len(flattened_matrices[0]))]
+
+bnry_int_mat_df = pd.DataFrame(binary_flat_matrices, columns = matrix_columns)
+print(bnry_int_mat_df.shape)
+print(bnry_int_mat_df)
+spec_df = pd.DataFrame(spectral_data)
+print(spec_df.shape)
+
+# next  concat the two together 
+import pandas as pd
+
+
+
+concat_df = pd.concat([spec_df, bnry_int_mat_df], axis =1)
+
+# pre process data some more
+
+X_spec = concat_df.iloc[:, :2000].values # spectra data
+Y_matr = concat_df.iloc[:, 2000:].values # matrices 
+
+import torch
+import torch.nn as nn
+from sklearn.model_selection import train_test_split
+
+# splitting into train test val split 80, 20 
+X_train, X_test, y_train, y_test = train_test_split(X_spec, Y_matr, test_size=0.2, random_state=42)
+X_test, X_val, y_test, y_val = train_test_split(X_test, y_test, test_size=0.2, random_state=42)
+
+
+print("Training Set:", X_spec.shape, y_train.shape)
+print("Validation Set:", X_val.shape, y_val.shape)
+print("Test Set:", X_test.shape, y_test.shape)
+
+
+import torch 
+from torch.utils.data import DataLoader, TensorDataset
+
+X_train = torch.Tensor(X_train).to(device)
+X_test = torch.Tensor(X_test).to(device)
+X_val = torch.Tensor(X_val).to(device)
+y_val= torch.Tensor(y_val).to(device)
+y_train = torch.Tensor(y_train).to(device)
+y_test = torch.Tensor(y_test).to(device)
+
+
+batch_size = 512
+train_dataset = TensorDataset(X_train, y_train)
+val_dataset = TensorDataset(X_val, y_val)
+test_dataset = TensorDataset(X_test, y_test)
 train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True)
 test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=True)
-
 
 
 class LSTM(nn.Module):
