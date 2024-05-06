@@ -118,5 +118,21 @@ class NativeMassSpecSimulator:
             binned_mz_range = np.arange(0, 20000, 10)
 
         return binned_mz_range, binned_normalised_spectrum
+
+
+    def generate_spectrum_from_pred(self, single_matrices):
+        interaction_matrix = single_matrices
+        mz_range, normalized_spectrum = self.simulate_mass_spectrum(interaction_matrix)
+        
+        binned_normalised_spectrum = np.zeros(2000)
+
+        for mz, intensity in zip(mz_range, normalized_spectrum):
+            bin_idx = int(mz // 10)
+            if bin_idx < 2000:
+                binned_normalised_spectrum[bin_idx] += intensity
+
+            binned_mz_range = np.arange(0, 20000, 10)
+
+        return binned_mz_range, binned_normalised_spectrum
         
     
