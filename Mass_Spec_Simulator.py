@@ -64,7 +64,7 @@ class NativeMassSpecSimulator:
             spectrum = self.simulate_complex_spectrum(complex_mass)
 
             # Scale the spectrum by the interaction matrix value
-            scaled_spectrum = spectrum * interaction_matrix[i, j]
+            scaled_spectrum = spectrum * interaction_matrix[i, j] 
 
             # Generate the peak label based on stoichiometry
             #peak_label = f"{stoich_A +1}A_{stoich_B +1}B_{interaction_matrix[i, j]}"
@@ -75,6 +75,9 @@ class NativeMassSpecSimulator:
         # Normalize the combined spectrum after summing contributions from all interactions
         total_intensity = np.sum(combined_spectrum)
         normalized_spectrum = combined_spectrum / total_intensity if total_intensity > 0 else combined_spectrum
+            ## if there is only 1 element in the matrix then it is is scaled to 1 by the normlisation
+            ## need to sort this out
+
 
         #print("normalized_spectrum:", normalized_spectrum)
         #print("peak_labels:", peak_labels)
@@ -120,8 +123,8 @@ class NativeMassSpecSimulator:
         return binned_mz_range, binned_normalised_spectrum
 
 
-    def generate_spectrum_from_pred(self, single_matrices):
-        interaction_matrix = single_matrices
+    def generate_spectrum_from_pred(self, matrix):
+        interaction_matrix = matrix
         mz_range, normalized_spectrum = self.simulate_mass_spectrum(interaction_matrix)
         
         binned_normalised_spectrum = np.zeros(2000)
