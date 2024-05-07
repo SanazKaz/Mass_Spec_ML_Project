@@ -83,6 +83,42 @@ class NativeMassSpecSimulator:
         #print("peak_labels:", peak_labels)
         
         return mz_range, normalized_spectrum #, peak_labels
+    
+
+    def simulate_single_scaled(self, interaction_matrix):
+        mz_range = np.arange(1, 20001)
+        combined_spectrum = np.zeros_like(mz_range, dtype=float)
+        #peak_labels = []
+
+        for i, j in np.argwhere(interaction_matrix > 0):
+
+            stoich_A = i  # Stoichiometry of Protein A
+            stoich_B = j  # Stoichiometry of Protein B
+            complex_mass = stoich_A * self.monomer_masses[0] + stoich_B * self.monomer_masses[1]
+            
+            
+            spectrum = self.simulate_complex_spectrum(complex_mass)
+
+            # Scale the spectrum by the interaction matrix value
+            scaled_spectrum = spectrum * interaction_matrix[i, j] 
+
+            # Generate the peak label based on stoichiometry
+            #peak_label = f"{stoich_A +1}A_{stoich_B +1}B_{interaction_matrix[i, j]}"
+            #peak_labels.append(peak_label)
+
+            combined_spectrum += scaled_spectrum
+            
+        # Normalize the combined spectrum after summing contributions from all interactions
+        total_intensity = np.sum(combined_spectrum)
+        normalized_spectrum = combined_spectrum / total_intensity if total_intensity > 0 else combined_spectrum
+            ## if there is only 1 element in the matrix then it is is scaled to 1 by the normlisation
+            ## need to sort this out
+
+
+        #print("normalized_spectrum:", normalized_spectrum)
+        #print("peak_labels:", peak_labels)
+        
+        return mz_range, normalized_spectrum #, peak_labels
 
 
 
