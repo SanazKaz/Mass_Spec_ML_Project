@@ -85,10 +85,9 @@ class NativeMassSpecSimulator:
         return mz_range, normalized_spectrum #, peak_labels
     
 
-    def simulate_single_scaled(self, interaction_matrix):
+    def simulate_single_scaled(self, interaction_matrix, spectra):
         mz_range = np.arange(1, 20001)
         combined_spectrum = np.zeros_like(mz_range, dtype=float)
-        #peak_labels = []
 
         for i, j in np.argwhere(interaction_matrix > 0):
 
@@ -102,23 +101,30 @@ class NativeMassSpecSimulator:
             # Scale the spectrum by the interaction matrix value
             scaled_spectrum = spectrum * interaction_matrix[i, j] 
 
-            # Generate the peak label based on stoichiometry
-            #peak_label = f"{stoich_A +1}A_{stoich_B +1}B_{interaction_matrix[i, j]}"
-            #peak_labels.append(peak_label)
-
             combined_spectrum += scaled_spectrum
+            total_intensity = np.sum(spectra) # adding all 2000 intensities then dividing new spec by this
             
         # Normalize the combined spectrum after summing contributions from all interactions
-        total_intensity = np.sum(combined_spectrum)
-        normalized_spectrum = combined_spectrum / total_intensity if total_intensity > 0 else combined_spectrum
+        normalized_spectrum = combined_spectrum / total_intensity
             ## if there is only 1 element in the matrix then it is is scaled to 1 by the normlisation
             ## need to sort this out
-
-
-        #print("normalized_spectrum:", normalized_spectrum)
-        #print("peak_labels:", peak_labels)
         
-        return mz_range, normalized_spectrum #, peak_labels
+        ## need to bin it here 
+        binned_normalised_spectrum = np.zeros(2001)
+        bin_counts = np.zeros(2001)
+
+        for mz, intensity in zip(mz_range, normalized_spectrum):
+            bin_idx = int(mz // 10)
+            if bin_idx < 2001:
+                binned_normalised_spectrum[bin_idx] += intensity ## this is added the intensity to the bin index ? kind of dum
+                bin_counts[bin_idx] += 1
+        
+        mask = bin_counts > 0
+        binned_normalised_spectrum[mask] /= bin_counts[mask]
+
+        binned_mz_range = np.arange(0, 20010, 10)
+        return binned_mz_range, binned_normalised_spectrum
+
 
 
 
@@ -127,7 +133,7 @@ class NativeMassSpecSimulator:
         #interaction_matrix = np.where(interaction_matrix > 0, np.random.randint(1, 7, interaction_matrix.shape), interaction_matrix)
         nonzeros = np.random.randint(3, 12) # this determines how many non zero stoichs you'll have 
         if nonzeros > n_proteins * n_proteins: # if the number of non zeros is greater than the number of elements in the matrix then set it between the range of rows and cols
-            nonzeros = np.random.randint(n_proteins, n_proteins + 1)
+            nonzeros = np.random.randint(1, n_proteins * n_proteins) # to avoid the case where the number of non zeros is greater than the number of elements in the matrix
         idx = np.random.choice(np.arange(n_proteins * n_proteins), size=(n_proteins * n_proteins - nonzeros), replace=False)
         interaction_matrix.ravel()[idx] = 0
         interaction_matrix[0, 0] = 0
@@ -135,43 +141,45 @@ class NativeMassSpecSimulator:
         return interaction_matrix
 
 
-    
-    # def update_interaction_matrix(self, interaction_matrix):
-    #     # Randomly update non-zero values in the interaction matrix
-    #     interaction_matrix = np.where(interaction_matrix > 0, np.random.randint(1, 7, interaction_matrix.shape), interaction_matrix)
-    #     print("updated interaction matrix:", interaction_matrix)
-
-    #   return interaction_matrix
-
     def generate_single_spectrum(self, n_proteins):
         interaction_matrix = self.create_interaction_matrix(n_proteins)
         mz_range, normalized_spectrum = self.simulate_mass_spectrum(interaction_matrix)
         
-        binned_normalised_spectrum = np.zeros(2000)
+        binned_normalised_spectrum = np.zeros(2001)
+        bin_counts = np.zeros(2001)
 
         for mz, intensity in zip(mz_range, normalized_spectrum):
             bin_idx = int(mz // 10)
-            if bin_idx < 2000:
-                binned_normalised_spectrum[bin_idx] += intensity
+            if bin_idx < 2001:
+                binned_normalised_spectrum[bin_idx] += intensity ## this is added the intensity to the bin index ? kind of dum
+                bin_counts[bin_idx] += 1
+        
+        mask = bin_counts > 0
+        binned_normalised_spectrum[mask] /= bin_counts[mask]
 
-            binned_mz_range = np.arange(0, 20000, 10)
-
+        binned_mz_range = np.arange(0, 20010, 10)
         return binned_mz_range, binned_normalised_spectrum
+
+
 
 
     def generate_spectrum_from_pred(self, matrix):
         interaction_matrix = matrix
         mz_range, normalized_spectrum = self.simulate_mass_spectrum(interaction_matrix)
         
-        binned_normalised_spectrum = np.zeros(2000)
+        binned_normalised_spectrum = np.zeros(2001)
+        bin_counts = np.zeros(2001)
 
         for mz, intensity in zip(mz_range, normalized_spectrum):
             bin_idx = int(mz // 10)
-            if bin_idx < 2000:
-                binned_normalised_spectrum[bin_idx] += intensity
+            if bin_idx < 2001:
+                binned_normalised_spectrum[bin_idx] += intensity ## this is added the intensity to the bin index ? kind of dum
+                bin_counts[bin_idx] += 1
+        
+        mask = bin_counts > 0
+        binned_normalised_spectrum[mask] /= bin_counts[mask]
 
-            binned_mz_range = np.arange(0, 20000, 10)
-
+        binned_mz_range = np.arange(0, 20010, 10)
         return binned_mz_range, binned_normalised_spectrum
         
     
