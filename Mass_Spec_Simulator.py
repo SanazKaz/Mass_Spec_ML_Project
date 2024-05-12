@@ -17,6 +17,8 @@ class NativeMassSpecSimulator:
         #self.run_counter = 0  # Initialize run counter
 
     def simulate_complex_spectrum(self, complex_mass):
+        """ Simulate a mass spectrum for a single complex"""
+
         mz_range = np.arange(1, 20001)
         spectrum = np.zeros_like(mz_range, dtype=float)
 
@@ -50,11 +52,13 @@ class NativeMassSpecSimulator:
         return spectrum
     
     def simulate_mass_spectrum(self, interaction_matrix):
+        """ Simulate a mass spectrum with all complexes based on the interaction matrix"""
         mz_range = np.arange(1, 20001)
         combined_spectrum = np.zeros_like(mz_range, dtype=float)
         #peak_labels = []
 
         for i, j in np.argwhere(interaction_matrix > 0):
+            print("non zero from def:", np.argwhere(interaction_matrix > 0))
 
             stoich_A = i  # Stoichiometry of Protein A
             stoich_B = j  # Stoichiometry of Protein B
@@ -86,6 +90,11 @@ class NativeMassSpecSimulator:
     
 
     def simulate_single_scaled(self, interaction_matrix, spectra):
+
+        """to simulate a single spectrum from the predicted 
+        matrices for overlaying with  original spectra"""
+
+
         mz_range = np.arange(1, 20001)
         combined_spectrum = np.zeros_like(mz_range, dtype=float)
 
@@ -128,7 +137,10 @@ class NativeMassSpecSimulator:
 
 
 
-    def create_interaction_matrix(self, n_proteins): # Protein A is column B is the row
+    def create_interaction_matrix(self, n_proteins): 
+        """Create a random square interaction matrix with x by x """
+
+        # Protein A is column B is the row
         interaction_matrix = np.random.uniform(0, 1, (n_proteins, n_proteins))
         #interaction_matrix = np.where(interaction_matrix > 0, np.random.randint(1, 7, interaction_matrix.shape), interaction_matrix)
         nonzeros = np.random.randint(3, 12) # this determines how many non zero stoichs you'll have 
@@ -142,6 +154,10 @@ class NativeMassSpecSimulator:
 
 
     def generate_single_spectrum(self, n_proteins):
+        """Generate a single mass spectrum for n_proteins n_proteins
+        main def that is called to generate the spectra for the dataset"""
+
+
         interaction_matrix = self.create_interaction_matrix(n_proteins)
         mz_range, normalized_spectrum = self.simulate_mass_spectrum(interaction_matrix)
         
