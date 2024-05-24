@@ -9,3 +9,7 @@
 /*.csv
 /*.txt
 /*.pt
+/*.pth
+
+#output of wandb
+wandb/
